@@ -1,24 +1,14 @@
 {
-  "name": "expertcoder/swiftmailer-send-grid-bundle",
+  "name": "gulaandrij/swiftmailer-send-grid-bundle",
   "type": "symfony-bundle",
   "description": "Swiftmailer Transport and Symfony bundle for Sendgrid",
-  "homepage": "https://github.com/expertcoder/SwiftmailerSendGridBundle",
+  "homepage": "https://github.com/gulaandrij/SwiftmailerSendGridBundle",
   "license": "MIT",
-  "authors": [
-    {
-      "name": "Samual Anthony",
-      "email": "sam@expertcoder.io"
-    },
-    {
-      "name": "Maxime Hermouet",
-      "email": "moux2003@hotmail.com"
-    }
-  ],
   "require": {
     "php": ">=5.4",
-    "symfony/symfony": "~2.7|~3.3|~4.0",
-    "swiftmailer/swiftmailer": ">=4.2.0,<6.0.0",
-    "sendgrid/sendgrid": "^5.0"
+    "symfony/dependency-injection": "~2.7|~3.3|~4.0",
+    "swiftmailer/swiftmailer": "6.*",
+    "sendgrid/sendgrid": "6.*"
   },
   "autoload": {
     "psr-4": { "ExpertCoder\\Swiftmailer\\SendGridBundle\\": "src/" }
@@ -27,6 +17,7 @@
     "psr-4": { "ExpertCoder\\Swiftmailer\\SendGridBundle\\Tests\\": "tests/"}
   },
   "require-dev": {
-    "nyholm/symfony-bundle-test": "^1.3"
+    "nyholm/symfony-bundle-test": "^1.3",
+    "phpunit/phpunit": "^7.0"
   }
 }
