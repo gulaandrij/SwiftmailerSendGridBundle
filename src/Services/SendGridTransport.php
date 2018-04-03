@@ -3,11 +3,10 @@
 namespace ExpertCoder\Swiftmailer\SendGridBundle\Services;
 
 use finfo;
+use Psr\Log\LoggerInterface;
 use SendGrid;
 use Swift_Events_EventListener;
-use Swift_Mime_Attachment;
 use Swift_Transport;
-use Psr\Log\LoggerInterface;
 
 class SendGridTransport implements Swift_Transport
 {
@@ -81,7 +80,7 @@ class SendGridTransport implements Swift_Transport
      * WARNING : $failedRecipients and return value are faked.
      *
      * @param \Swift_Mime_SimpleMessage $message
-     * @param array              $failedRecipients
+     * @param array $failedRecipients
      *
      * @return int
      */
@@ -91,86 +90,90 @@ class SendGridTransport implements Swift_Transport
         $sent = 0;
         $prepareFailedRecipients = [];
 
-        //Get the first from email (SendGrid PHP library only seems to support one)
-        $fromArray = $message->getFrom();
-        $fromName = reset($fromArray);
-        $fromEmail = key($fromArray);
+        foreach ($message->getFrom() as $email => $name) {
+            $from = new SendGrid\Email($email, $email);
+            break;
+        }
 
-        $mail = new SendGrid\Mail(); //Intentionally not using constructor arguments as they are tedious to work with
+        foreach ($message->getTo() as $email => $name) {
+            $to = new SendGrid\Email($email, $email);
+            break;
+        }
+
+        $subject = $message->getSubject();
+
+        // extract content type from body to prevent multi-part content-type error
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $contentType = $finfo->buffer($message->getBody());
+        $content = new SendGrid\Content($contentType, $message->getBody());
+
+        $mail = new SendGrid\Mail($from, $subject, $to, $content); //Intentionally not using constructor arguments as they are tedious to work with
 
         // categories can be useful if you use them like tags to, for example, distinguish different applications.
         foreach ($this->sendGridCategories as $category) {
             $mail->addCategory($category);
         }
 
-        $mail->setFrom(new SendGrid\Email($fromName, $fromEmail));
-        $mail->setSubject($message->getSubject());
 
-        // extract content type from body to prevent multi-part content-type error
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $contentType = $finfo->buffer($message->getBody());
-        $mail->addContent(new SendGrid\Content($contentType, $message->getBody()));
-
-        $personalization = new SendGrid\Personalization();
-
-        // process TO
-        if ($toArr = $message->getTo()) {
-            foreach ($toArr as $email => $name) {
-                $personalization->addTo(new SendGrid\Email($name, $email));
-                ++$sent;
-                $prepareFailedRecipients[] = $email;
-            }
-        }
-
-        // process CC
-        if ($ccArr = $message->getCc()) {
-            foreach ($ccArr as $email => $name) {
-                $personalization->addCc(new SendGrid\Email($name, $email));
-                ++$sent;
-                $prepareFailedRecipients[] = $email;
-            }
-        }
-
-        // process BCC
-        if ($bccArr = $message->getBcc()) {
-            foreach ($bccArr as $email => $name) {
-                $personalization->addBcc(new SendGrid\Email($name, $email));
-                ++$sent;
-                $prepareFailedRecipients[] = $email;
-            }
-        }
-
-        // process attachment
-        if ($attachments = $message->getChildren()) {
-            foreach ($attachments as $attachment) {
-                if ($attachment instanceof Swift_Mime_Attachment) {
-                    $sAttachment = new SendGrid\Attachment();
-                    $sAttachment->setContent(base64_encode($attachment->getBody()));
-                    $sAttachment->setType($attachment->getContentType());
-                    $sAttachment->setFilename($attachment->getFilename());
-                    $sAttachment->setDisposition($attachment->getDisposition());
-                    $sAttachment->setContentId($attachment->getId());
-                    $mail->addAttachment($sAttachment);
-                } elseif (in_array($attachment->getContentType(), ['text/plain', 'text/html'])) {
-                    // add part if any is defined, to avoid error please set body as text and part as html
-                    $mail->addContent(new SendGrid\Content($attachment->getContentType(), $attachment->getBody()));
-                }
-            }
-        }
-
-        $mail->addPersonalization($personalization);
+//        $personalization = new SendGrid\Personalization();
+//
+//        // process TO
+//        if ($toArr = $message->getTo()) {
+//            foreach ($toArr as $email => $name) {
+//                $personalization->addTo(new SendGrid\Email($name, $email));
+//                ++$sent;
+//                $prepareFailedRecipients[] = $email;
+//            }
+//        }
+//
+//        // process CC
+//        if ($ccArr = $message->getCc()) {
+//            foreach ($ccArr as $email => $name) {
+//                $personalization->addCc(new SendGrid\Email($name, $email));
+//                ++$sent;
+//                $prepareFailedRecipients[] = $email;
+//            }
+//        }
+//
+//        // process BCC
+//        if ($bccArr = $message->getBcc()) {
+//            foreach ($bccArr as $email => $name) {
+//                $personalization->addBcc(new SendGrid\Email($name, $email));
+//                ++$sent;
+//                $prepareFailedRecipients[] = $email;
+//            }
+//        }
+//
+//        // process attachment
+//        if ($attachments = $message->getChildren()) {
+//            foreach ($attachments as $attachment) {
+//                if ($attachment instanceof Swift_Mime_Attachment) {
+//                    $sAttachment = new SendGrid\Attachment();
+//                    $sAttachment->setContent(base64_encode($attachment->getBody()));
+//                    $sAttachment->setType($attachment->getContentType());
+//                    $sAttachment->setFilename($attachment->getFilename());
+//                    $sAttachment->setDisposition($attachment->getDisposition());
+//                    $sAttachment->setContentId($attachment->getId());
+//                    $mail->addAttachment($sAttachment);
+//                } elseif (in_array($attachment->getContentType(), ['text/plain', 'text/html'])) {
+//                    // add part if any is defined, to avoid error please set body as text and part as html
+//                    $mail->addContent(new SendGrid\Content($attachment->getContentType(), $attachment->getBody()));
+//                }
+//            }
+//        }
+//
+//        $mail->addPersonalization($personalization);
 
         $sendGrid = new SendGrid($this->sendGridApiKey);
 
         $response = $sendGrid->client->mail()->send()->post($mail);
-
         // only 2xx status are ok
         if ($response->statusCode() < self::STATUS_OK_SUCCESSFUL_MIN_RANGE ||
             self::STATUS_SUCCESSFUL_MAX_RANGE < $response->statusCode()) {
             // to force big boom error uncomment this line
             //throw new \Swift_TransportException("Error when sending message. Return status :".$response->statusCode());
             if (null !== $this->logger) {
-                $this->logger->error($response->statusCode().': '.$response->body());
+                $this->logger->error($response->statusCode() . ': ' . $response->body());
             }
 
             // copy failed recipients
