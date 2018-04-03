@@ -80,7 +80,7 @@ class SendGridTransport implements Swift_Transport
      * WARNING : $failedRecipients and return value are faked.
      *
      * @param \Swift_Mime_SimpleMessage $message
-     * @param array $failedRecipients
+     * @param array                     $failedRecipients
      *
      * @return int
      */
@@ -168,12 +168,13 @@ class SendGridTransport implements Swift_Transport
 
         $response = $sendGrid->client->mail()->send()->post($mail);
         // only 2xx status are ok
-        if ($response->statusCode() < self::STATUS_OK_SUCCESSFUL_MIN_RANGE ||
-            self::STATUS_SUCCESSFUL_MAX_RANGE < $response->statusCode()) {
+        if ($response->statusCode() < self::STATUS_OK_SUCCESSFUL_MIN_RANGE
+            || self::STATUS_SUCCESSFUL_MAX_RANGE < $response->statusCode()
+        ) {
             // to force big boom error uncomment this line
             //throw new \Swift_TransportException("Error when sending message. Return status :".$response->statusCode());
             if (null !== $this->logger) {
-                $this->logger->error($response->statusCode() . ': ' . $response->body());
+                $this->logger->error($response->statusCode().': '.$response->body());
             }
 
             // copy failed recipients

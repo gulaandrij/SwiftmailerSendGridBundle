@@ -6,6 +6,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
  * Class ExpertCoderSwiftmailerSendGridBundle
+ *
  * @package ExpertCoder\Swiftmailer\SendGridBundle
  */
 class ExpertCoderSwiftmailerSendGridBundle extends Bundle
