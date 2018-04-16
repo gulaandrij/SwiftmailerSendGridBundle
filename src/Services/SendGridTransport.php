@@ -91,12 +91,12 @@ class SendGridTransport implements Swift_Transport
         $prepareFailedRecipients = [];
 
         foreach ($message->getFrom() as $email => $name) {
-            $from = new SendGrid\Email($email, $email);
+            $from = new SendGrid\Email($name, $email);
             break;
         }
 
         foreach ($message->getTo() as $email => $name) {
-            $to = new SendGrid\Email($email, $email);
+            $to = new SendGrid\Email($name, $email);
             break;
         }
 
