@@ -5,6 +5,8 @@ namespace ExpertCoder\Swiftmailer\SendGridBundle\Services;
 use finfo;
 use Psr\Log\LoggerInterface;
 use SendGrid;
+use SendGrid\Mail\Content;
+use SendGrid\Mail\Mail;
 use Swift_Events_EventListener;
 use Swift_Transport;
 
@@ -90,28 +92,29 @@ class SendGridTransport implements Swift_Transport
         $sent = 0;
         $prepareFailedRecipients = [];
 
+        $Email = new Mail();
+
         foreach ($message->getFrom() as $email => $name) {
-            $from = new SendGrid\Email($name, $email);
+            $Email->setFrom($email, $name);
             break;
         }
 
         foreach ($message->getTo() as $email => $name) {
-            $to = new SendGrid\Email($name, $email);
-            break;
+            $Email->addTo($email, $name);
         }
 
-        $subject = $message->getSubject();
+        $Email->setSubject($message->getSubject());
 
         // extract content type from body to prevent multi-part content-type error
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $contentType = $finfo->buffer($message->getBody());
-        $content = new SendGrid\Content($contentType, $message->getBody());
+        $content = new Content($contentType, $message->getBody());
 
-        $mail = new SendGrid\Mail($from, $subject, $to, $content); //Intentionally not using constructor arguments as they are tedious to work with
+        $Email->addContent($content);
 
         // categories can be useful if you use them like tags to, for example, distinguish different applications.
         foreach ($this->sendGridCategories as $category) {
-            $mail->addCategory($category);
+            $Email->addCategory($category);
         }
 
 
@@ -166,15 +169,17 @@ class SendGridTransport implements Swift_Transport
 
         $sendGrid = new SendGrid($this->sendGridApiKey);
 
-        $response = $sendGrid->client->mail()->send()->post($mail);
+        $response = $sendGrid->send($Email);
+        $responseCode = $response->statusCode();
+
         // only 2xx status are ok
-        if ($response->statusCode() < self::STATUS_OK_SUCCESSFUL_MIN_RANGE
-            || self::STATUS_SUCCESSFUL_MAX_RANGE < $response->statusCode()
+        if ($responseCode < self::STATUS_OK_SUCCESSFUL_MIN_RANGE
+            || self::STATUS_SUCCESSFUL_MAX_RANGE < $responseCode
         ) {
             // to force big boom error uncomment this line
             //throw new \Swift_TransportException("Error when sending message. Return status :".$response->statusCode());
             if (null !== $this->logger) {
-                $this->logger->error($response->statusCode().': '.$response->body());
+                $this->logger->error($responseCode.': '.$response->body());
             }
 
             // copy failed recipients
