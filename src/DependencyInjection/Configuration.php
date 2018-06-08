@@ -2,9 +2,9 @@
 
 namespace ExpertCoder\Swiftmailer\SendGridBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
-use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 
 /**
  * This is the class that validates and merges configuration from your app/config files.
@@ -35,15 +35,13 @@ class Configuration implements ConfigurationInterface
         if (method_exists($nodeBuilder, 'scalarPrototype')) {
             $nodeBuilder
                 ->arrayNode('categories')
-                    ->scalarPrototype()->end()
-                ->end()
-            ;
+                ->scalarPrototype()->end()
+                ->end();
         } else {
             $nodeBuilder
                 ->arrayNode('categories')
-                    ->prototype('scalar')->end()
-                ->end()
-            ;
+                ->prototype('scalar')->end()
+                ->end();
         }
     }
 
@@ -51,8 +49,7 @@ class Configuration implements ConfigurationInterface
     {
         $nodeBuilder
             ->scalarNode('api_key')
-                ->isRequired()
-            ->end()
-        ;
+            ->isRequired()
+            ->end();
     }
 }

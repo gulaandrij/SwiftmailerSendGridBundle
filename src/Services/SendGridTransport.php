@@ -13,18 +13,21 @@ use Swift_Transport;
 class SendGridTransport implements Swift_Transport
 {
     /**
+     *
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * 2xx responses indicate a successful request. The request that you made is valid and successful.
      */
     const STATUS_SUCCESSFUL_MAX_RANGE = 299;
 
     /**
+     *
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * ACCEPTED : Your message is both valid, and queued to be delivered.
      */
     const STATUS_ACCEPTED = 202;
 
     /**
+     *
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * OK : Your message is valid, but it is not queued to be delivered. Sandbox mode only.
      */
@@ -116,7 +119,6 @@ class SendGridTransport implements Swift_Transport
         foreach ($this->sendGridCategories as $category) {
             $Email->addCategory($category);
         }
-
 
 //        $personalization = new SendGrid\Personalization();
 //

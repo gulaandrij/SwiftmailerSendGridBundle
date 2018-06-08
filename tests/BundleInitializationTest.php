@@ -2,10 +2,10 @@
 
 namespace ExpertCoder\Swiftmailer\SendGridBundle\Tests;
 
-use Nyholm\BundleTest\BaseBundleTestCase;
-use Nyholm\BundleTest\CompilerPass\PublicServicePass;
 use ExpertCoder\Swiftmailer\SendGridBundle\ExpertCoderSwiftmailerSendGridBundle;
 use ExpertCoder\Swiftmailer\SendGridBundle\Services\SendGridTransport;
+use Nyholm\BundleTest\BaseBundleTestCase;
+use Nyholm\BundleTest\CompilerPass\PublicServicePass;
 
 class BundleInitializationTest extends BaseBundleTestCase
 {
