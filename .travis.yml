@@ -11,6 +11,6 @@ matrix:
 
 script:
     - composer inst
-    - vendor/bin/phpcs .
-#    - vendor/bin/phpstan anal -l 7 lib/
+    - vendor/bin/phpcs src/
+    - vendor/bin/phpstan anal -l 7 src/
     - vendor/bin/phpunit

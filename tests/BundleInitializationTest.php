@@ -14,7 +14,18 @@ use Nyholm\BundleTest\CompilerPass\PublicServicePass;
  */
 class BundleInitializationTest extends BaseBundleTestCase
 {
-    protected function getBundleClass()
+
+    /**
+     *
+     * @var \Symfony\Component\DependencyInjection\ContainerInterface
+     */
+    private $container;
+
+    /**
+     *
+     * @return string
+     */
+    protected function getBundleClass(): string
     {
         return ExpertCoderSwiftmailerSendGridBundle::class;
     }
@@ -25,10 +36,7 @@ class BundleInitializationTest extends BaseBundleTestCase
 
         // Make services public that have an idea that matches a regex
         $this->addCompilerPass(new PublicServicePass('|expertcoder_swift_mailer.*|'));
-    }
 
-    public function testInitBundle()
-    {
         // Create a new Kernel
         $kernel = $this->createKernel();
 
@@ -39,49 +47,50 @@ class BundleInitializationTest extends BaseBundleTestCase
         $this->bootKernel();
 
         // Get the container
-        $container = $this->getContainer();
+        $this->container = $this->getContainer();
+    }
 
+    public function testInitBundle()
+    {
         // Test if services exists
-        $this->assertTrue($container->has('expertcoder_swift_mailer.send_grid.transport'));
-        $service = $container->get('expertcoder_swift_mailer.send_grid.transport');
+        $this->assertTrue($this->container->has('expertcoder_swift_mailer.send_grid.transport'));
+        $service = $this->container->get('expertcoder_swift_mailer.send_grid.transport');
         $this->assertInstanceOf(SendGridTransport::class, $service);
 
         // Test if parameters exists
-        $this->assertTrue($container->hasParameter('expertcoder_swiftmailer_sendgrid.api_key'));
-        $this->assertTrue($container->hasParameter('expertcoder_swiftmailer_sendgrid.categories'));
-        $this->assertTrue($container->hasParameter('expertcoder_swiftmailer_sendgrid.sandbox_mode'));
+        $this->assertTrue($this->container->hasParameter('expertcoder_swiftmailer_sendgrid.api_key'));
+        $this->assertTrue($this->container->hasParameter('expertcoder_swiftmailer_sendgrid.categories'));
+        $this->assertTrue($this->container->hasParameter('expertcoder_swiftmailer_sendgrid.sandbox_mode'));
     }
 
     public function testSend()
     {
-
         $message = (new \Swift_Message())
             // Give the message a subject
             ->setSubject('Your subject')
             // Set the From address with an associative array
-            ->setFrom(['john@doe.com' => 'John Doe', 'john1@doe.com' => 'John Doe', 'john2@doe.com' => 'John Doe', 'john3@doe.com' => 'John Doe'])
+            ->setFrom(
+                [
+                 'john@doe.com'  => 'John Doe',
+                 'john1@doe.com' => 'John Doe',
+                 'john2@doe.com' => 'John Doe',
+                 'john3@doe.com' => 'John Doe',
+                ]
+            )
             // Set the To addresses with an associative array (setTo/setCc/setBcc)
             ->setTo('gyla.andrij@gmail.com')
             ->setCc('gyla1.andrij@gmail.com')
-            ->setBcc('gyla2.andrij@gmail.com')
+            ->setBcc(
+                ['gyla2.andrij@gmail.com']
+            )
             // Give it a body
             ->setBody('Here is the message itself')
             // And optionally an alternative body
             ->addPart('<q>Here is the message itself</q>', 'text/html')
             // Optionally add any attachments
-            ->attach(\Swift_Attachment::fromPath('my-document.pdf'));
+            ->attach(\Swift_Attachment::fromPath('./tests/test.jpg'));
 
-        // Create a new Kernel
-        $kernel = $this->createKernel();
-
-        // Add some configuration
-        $kernel->addConfigFile(__DIR__.'/config_test.yml');
-
-        // Boot the kernel.
-        $this->bootKernel();
-
-        $container = $this->getContainer();
-        $sm = new \Swift_Mailer($container->get('expertcoder_swift_mailer.send_grid.transport'));
+        $sm = new \Swift_Mailer($this->container->get('expertcoder_swift_mailer.send_grid.transport'));
         $sended = $sm->send($message);
 
         $this->assertEquals(3, $sended);

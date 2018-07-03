@@ -2,6 +2,7 @@
 
 namespace ExpertCoder\Swiftmailer\SendGridBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -20,6 +21,10 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
+        /**
+         *
+         * @var ArrayNodeDefinition $rootNode
+         */
         $rootNode = $treeBuilder->root('expert_coder_swiftmailer_send_grid');
 
         $children = $rootNode->isRequired()->fixXmlConfig('category')->children();
@@ -41,12 +46,12 @@ class Configuration implements ConfigurationInterface
         if (method_exists($nodeBuilder, 'scalarPrototype')) {
             $nodeBuilder
                 ->arrayNode('categories')
-                ->scalarPrototype()->end()
+                ->scalarPrototype()
                 ->end();
         } else {
             $nodeBuilder
                 ->arrayNode('categories')
-                ->prototype('scalar')->end()
+                ->prototype('scalar')
                 ->end();
         }
     }

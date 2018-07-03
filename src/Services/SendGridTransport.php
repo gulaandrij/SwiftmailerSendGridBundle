@@ -5,8 +5,14 @@ namespace ExpertCoder\Swiftmailer\SendGridBundle\Services;
 use finfo;
 use Psr\Log\LoggerInterface;
 use SendGrid;
+use SendGrid\Mail\Attachment;
+use SendGrid\Mail\Bcc;
+use SendGrid\Mail\Cc;
 use SendGrid\Mail\Content;
+use SendGrid\Mail\From;
 use SendGrid\Mail\Mail;
+use SendGrid\Mail\MailSettings;
+use SendGrid\Mail\To;
 use Swift_Events_EventListener;
 use Swift_Transport;
 
@@ -79,23 +85,37 @@ class SendGridTransport implements Swift_Transport
         $this->sandMode = $sandMode;
     }
 
-    public function isStarted()
+    /**
+     *
+     * @return bool
+     */
+    public function isStarted(): bool
     {
         //Not used
         return true;
     }
 
+    /**
+     * Start
+     */
     public function start()
     {
         //Not used
     }
 
+    /**
+     * Stop
+     */
     public function stop()
     {
         //Not used
     }
 
-    public function setLogger(LoggerInterface $logger)
+    /**
+     *
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
@@ -116,13 +136,13 @@ class SendGridTransport implements Swift_Transport
 
         $Email = new Mail();
 
-        $emailSettings = new SendGrid\Mail\MailSettings();
+        $emailSettings = new MailSettings();
         $emailSettings->setSandboxMode($this->sandMode);
 
         $Email->setMailSettings($emailSettings);
 
         foreach ($message->getFrom() as $email => $name) {
-            $Email->setFrom(new SendGrid\Mail\From($email, $name));
+            $Email->setFrom(new From($email, $name));
             break;
         }
 
@@ -142,45 +162,44 @@ class SendGridTransport implements Swift_Transport
 
         if ($toArr = $message->getTo()) {
             foreach ($toArr as $email => $name) {
-                $Email->addTo(new SendGrid\Mail\To($email, $name));
+                $Email->addTo(new To($email, $name));
                 ++$sent;
                 $prepareFailedRecipients[] = $email;
             }
         }
         if ($toArr = $message->getCc()) {
             foreach ($toArr as $email => $name) {
-                $Email->addCc(new SendGrid\Mail\Cc($email, $name));
+                $Email->addCc(new Cc($email, $name));
                 ++$sent;
                 $prepareFailedRecipients[] = $email;
             }
         }
         if ($toArr = $message->getBcc()) {
             foreach ($toArr as $email => $name) {
-                $Email->addBcc(new SendGrid\Mail\Bcc($email, $name));
+                $Email->addBcc(new Bcc($email, $name));
                 ++$sent;
                 $prepareFailedRecipients[] = $email;
             }
         }
 
-//        // process attachment
-//        if ($attachments = $message->getChildren()) {
-//            foreach ($attachments as $attachment) {
-//                if ($attachment instanceof Swift_Mime_Attachment) {
-//                    $sAttachment = new SendGrid\Attachment();
-//                    $sAttachment->setContent(base64_encode($attachment->getBody()));
-//                    $sAttachment->setType($attachment->getContentType());
-//                    $sAttachment->setFilename($attachment->getFilename());
-//                    $sAttachment->setDisposition($attachment->getDisposition());
-//                    $sAttachment->setContentId($attachment->getId());
-//                    $mail->addAttachment($sAttachment);
-//                } elseif (in_array($attachment->getContentType(), ['text/plain', 'text/html'])) {
-//                    // add part if any is defined, to avoid error please set body as text and part as html
-//                    $mail->addContent(new SendGrid\Content($attachment->getContentType(), $attachment->getBody()));
-//                }
-//            }
-//        }
-//
-//        $mail->addPersonalization($Email);
+        // process attachment
+        if ($attachments = $message->getChildren()) {
+            foreach ($attachments as $attachment) {
+                if ($attachment instanceof \Swift_Mime_Attachment) {
+                    $sAttachment = new Attachment();
+                    $sAttachment->setContent(base64_encode($attachment->getBody()));
+                    $sAttachment->setType($attachment->getContentType());
+                    $sAttachment->setFilename($attachment->getFilename());
+                    $sAttachment->setDisposition($attachment->getDisposition());
+                    $sAttachment->setContentID($attachment->getId());
+                    $Email->addAttachment($sAttachment);
+                } elseif (\in_array($attachment->getContentType(), ['text/plain', 'text/html'])) {
+                    // add part if any is defined, to avoid error please set body as text and part as html
+                    $Email->addContent(new Content($attachment->getContentType(), $attachment->getBody()));
+                }
+            }
+        }
+
         $sendGrid = new SendGrid($this->sendGridApiKey);
 
         $response = $sendGrid->send($Email);
