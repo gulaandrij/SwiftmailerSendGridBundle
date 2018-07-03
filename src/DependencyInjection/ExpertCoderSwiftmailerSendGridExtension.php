@@ -15,9 +15,13 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 class ExpertCoderSwiftmailerSendGridExtension extends Extension
 {
     /**
-     * {@inheritdoc}
+     *
+     * @param array            $configs
+     * @param ContainerBuilder $container
+     *
+     * @throws \Exception
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
@@ -27,5 +31,6 @@ class ExpertCoderSwiftmailerSendGridExtension extends Extension
 
         $container->setParameter('expertcoder_swiftmailer_sendgrid.api_key', $config['api_key']);
         $container->setParameter('expertcoder_swiftmailer_sendgrid.categories', $config['categories']);
+        $container->setParameter('expertcoder_swiftmailer_sendgrid.sandbox_mode', $config['sandbox_mode']);
     }
 }

@@ -10,6 +10,7 @@
                 class="ExpertCoder\Swiftmailer\SendGridBundle\Services\SendGridTransport" >
             <argument>%expertcoder_swiftmailer_sendgrid.api_key%</argument>
             <argument>%expertcoder_swiftmailer_sendgrid.categories%</argument>
+            <argument>%expertcoder_swiftmailer_sendgrid.sandbox_mode%</argument>
             <call method="setLogger">
                 <argument type="service" id="logger" on-invalid="ignore"/>
             </call>

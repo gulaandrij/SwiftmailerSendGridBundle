@@ -10,6 +10,11 @@ use SendGrid\Mail\Mail;
 use Swift_Events_EventListener;
 use Swift_Transport;
 
+/**
+ * Class SendGridTransport
+ *
+ * @package ExpertCoder\Swiftmailer\SendGridBundle\Services
+ */
 class SendGridTransport implements Swift_Transport
 {
     /**
@@ -17,21 +22,21 @@ class SendGridTransport implements Swift_Transport
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * 2xx responses indicate a successful request. The request that you made is valid and successful.
      */
-    const STATUS_SUCCESSFUL_MAX_RANGE = 299;
+    public const STATUS_SUCCESSFUL_MAX_RANGE = 299;
 
     /**
      *
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * ACCEPTED : Your message is both valid, and queued to be delivered.
      */
-    const STATUS_ACCEPTED = 202;
+    public const STATUS_ACCEPTED = 202;
 
     /**
      *
      * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
      * OK : Your message is valid, but it is not queued to be delivered. Sandbox mode only.
      */
-    const STATUS_OK_SUCCESSFUL_MIN_RANGE = 200;
+    public const STATUS_OK_SUCCESSFUL_MIN_RANGE = 200;
 
     /**
      * Sendgrid api key.
@@ -54,10 +59,24 @@ class SendGridTransport implements Swift_Transport
      */
     private $logger;
 
-    public function __construct($sendGridApiKey, $sendGridCategories)
+    /**
+     *
+     * @var bool
+     */
+    private $sandMode;
+
+    /**
+     * SendGridTransport constructor.
+     *
+     * @param string $sendGridApiKey
+     * @param array  $sendGridCategories
+     * @param bool   $sandMode
+     */
+    public function __construct(string $sendGridApiKey, array $sendGridCategories, bool $sandMode)
     {
         $this->sendGridApiKey = $sendGridApiKey;
         $this->sendGridCategories = $sendGridCategories;
+        $this->sandMode = $sandMode;
     }
 
     public function isStarted()
@@ -89,21 +108,25 @@ class SendGridTransport implements Swift_Transport
      *
      * @return int
      */
-    public function send(\Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    public function send(\Swift_Mime_SimpleMessage $message, &$failedRecipients = null): int
     {
+        dd($this->sendGridApiKey);
+
         // prepare fake data.
         $sent = 0;
         $prepareFailedRecipients = [];
 
         $Email = new Mail();
+        $procesor = new ProcessMessages();
+
+        $emailSettings = new SendGrid\Mail\MailSettings();
+        $emailSettings->setSandboxMode($this->sandMode);
+
+        $Email->setMailSettings($emailSettings);
 
         foreach ($message->getFrom() as $email => $name) {
-            $Email->setFrom($email, $name);
+            $Email->setFrom(new SendGrid\Mail\From($email, $name));
             break;
-        }
-
-        foreach ($message->getTo() as $email => $name) {
-            $Email->addTo($email, $name);
         }
 
         $Email->setSubject($message->getSubject());
@@ -120,35 +143,10 @@ class SendGridTransport implements Swift_Transport
             $Email->addCategory($category);
         }
 
-//        $personalization = new SendGrid\Personalization();
-//
-//        // process TO
-//        if ($toArr = $message->getTo()) {
-//            foreach ($toArr as $email => $name) {
-//                $personalization->addTo(new SendGrid\Email($name, $email));
-//                ++$sent;
-//                $prepareFailedRecipients[] = $email;
-//            }
-//        }
-//
-//        // process CC
-//        if ($ccArr = $message->getCc()) {
-//            foreach ($ccArr as $email => $name) {
-//                $personalization->addCc(new SendGrid\Email($name, $email));
-//                ++$sent;
-//                $prepareFailedRecipients[] = $email;
-//            }
-//        }
-//
-//        // process BCC
-//        if ($bccArr = $message->getBcc()) {
-//            foreach ($bccArr as $email => $name) {
-//                $personalization->addBcc(new SendGrid\Email($name, $email));
-//                ++$sent;
-//                $prepareFailedRecipients[] = $email;
-//            }
-//        }
-//
+        $procesor->process($Email, $message, SendGrid\Mail\To::class);
+        $procesor->process($Email, $message, SendGrid\Mail\Cc::class);
+        $procesor->process($Email, $message, SendGrid\Mail\Bcc::class);
+
 //        // process attachment
 //        if ($attachments = $message->getChildren()) {
 //            foreach ($attachments as $attachment) {
@@ -167,8 +165,7 @@ class SendGridTransport implements Swift_Transport
 //            }
 //        }
 //
-//        $mail->addPersonalization($personalization);
-
+//        $mail->addPersonalization($Email);
         $sendGrid = new SendGrid($this->sendGridApiKey);
 
         $response = $sendGrid->send($Email);
@@ -194,6 +191,10 @@ class SendGridTransport implements Swift_Transport
         return $sent;
     }
 
+    /**
+     *
+     * @param Swift_Events_EventListener $plugin
+     */
     public function registerPlugin(Swift_Events_EventListener $plugin)
     {
         // unused

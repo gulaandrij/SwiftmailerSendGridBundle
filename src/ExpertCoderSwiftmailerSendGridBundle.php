@@ -20,7 +20,7 @@ class ExpertCoderSwiftmailerSendGridBundle extends Bundle
      *
      * @return string The Bundle name it overrides or null if no parent
      */
-    public function getParent()
+    public function getParent(): ?string
     {
         return null;
     }

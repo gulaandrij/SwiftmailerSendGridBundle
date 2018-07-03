@@ -1,3 +1,4 @@
 expert_coder_swiftmailer_send_grid:
-  api_key: myApiKey
+  api_key: '%env(SENDGRID_APIKEY)%'
   categories: [category1, category2]
+  sandbox_mode: true

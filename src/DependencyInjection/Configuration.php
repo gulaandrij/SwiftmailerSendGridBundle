@@ -14,9 +14,10 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 class Configuration implements ConfigurationInterface
 {
     /**
-     * {@inheritdoc}
+     *
+     * @return TreeBuilder
      */
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('expert_coder_swiftmailer_send_grid');
@@ -24,12 +25,17 @@ class Configuration implements ConfigurationInterface
         $children = $rootNode->isRequired()->fixXmlConfig('category')->children();
         $this->configureApiKey($children);
         $this->configureCategories($children);
+        $this->configureSandboxMode($children);
         $children->end();
 
         return $treeBuilder;
     }
 
-    private function configureCategories(NodeBuilder $nodeBuilder)
+    /**
+     *
+     * @param NodeBuilder $nodeBuilder
+     */
+    private function configureCategories(NodeBuilder $nodeBuilder): void
     {
         // Symfony 3.3+
         if (method_exists($nodeBuilder, 'scalarPrototype')) {
@@ -45,11 +51,27 @@ class Configuration implements ConfigurationInterface
         }
     }
 
-    private function configureApiKey(NodeBuilder $nodeBuilder)
+    /**
+     *
+     * @param NodeBuilder $nodeBuilder
+     */
+    private function configureApiKey(NodeBuilder $nodeBuilder): void
     {
         $nodeBuilder
             ->scalarNode('api_key')
             ->isRequired()
+            ->end();
+    }
+
+    /**
+     *
+     * @param NodeBuilder $nodeBuilder
+     */
+    private function configureSandboxMode(NodeBuilder $nodeBuilder): void
+    {
+        $nodeBuilder
+            ->booleanNode('sandbox_mode')
+            ->defaultFalse()
             ->end();
     }
 }

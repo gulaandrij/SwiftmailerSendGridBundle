@@ -4,7 +4,10 @@
          xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/7.2/phpunit.xsd"
          colors="true"
          bootstrap="./vendor/autoload.php"
-        >
+>
+    <php>
+        <env name="SENDGRID_APIKEY" value="your_api_key"/>
+    </php>
 
     <testsuites>
         <testsuite name="Test Suite">
