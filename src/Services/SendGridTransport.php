@@ -110,14 +110,11 @@ class SendGridTransport implements Swift_Transport
      */
     public function send(\Swift_Mime_SimpleMessage $message, &$failedRecipients = null): int
     {
-        dd($this->sendGridApiKey);
-
         // prepare fake data.
         $sent = 0;
         $prepareFailedRecipients = [];
 
         $Email = new Mail();
-        $procesor = new ProcessMessages();
 
         $emailSettings = new SendGrid\Mail\MailSettings();
         $emailSettings->setSandboxMode($this->sandMode);
@@ -143,9 +140,27 @@ class SendGridTransport implements Swift_Transport
             $Email->addCategory($category);
         }
 
-        $procesor->process($Email, $message, SendGrid\Mail\To::class);
-        $procesor->process($Email, $message, SendGrid\Mail\Cc::class);
-        $procesor->process($Email, $message, SendGrid\Mail\Bcc::class);
+        if ($toArr = $message->getTo()) {
+            foreach ($toArr as $email => $name) {
+                $Email->addTo(new SendGrid\Mail\To($email, $name));
+                ++$sent;
+                $prepareFailedRecipients[] = $email;
+            }
+        }
+        if ($toArr = $message->getCc()) {
+            foreach ($toArr as $email => $name) {
+                $Email->addCc(new SendGrid\Mail\Cc($email, $name));
+                ++$sent;
+                $prepareFailedRecipients[] = $email;
+            }
+        }
+        if ($toArr = $message->getBcc()) {
+            foreach ($toArr as $email => $name) {
+                $Email->addBcc(new SendGrid\Mail\Bcc($email, $name));
+                ++$sent;
+                $prepareFailedRecipients[] = $email;
+            }
+        }
 
 //        // process attachment
 //        if ($attachments = $message->getChildren()) {
@@ -170,7 +185,6 @@ class SendGridTransport implements Swift_Transport
 
         $response = $sendGrid->send($Email);
         $responseCode = $response->statusCode();
-
         // only 2xx status are ok
         if ($responseCode < self::STATUS_OK_SUCCESSFUL_MIN_RANGE
             || self::STATUS_SUCCESSFUL_MAX_RANGE < $responseCode

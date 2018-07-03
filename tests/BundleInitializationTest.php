@@ -82,8 +82,8 @@ class BundleInitializationTest extends BaseBundleTestCase
 
         $container = $this->getContainer();
         $sm = new \Swift_Mailer($container->get('expertcoder_swift_mailer.send_grid.transport'));
-        $sm->send($message);
+        $sended = $sm->send($message);
 
-        dd($sm);
+        $this->assertEquals(3, $sended);
     }
 }
